@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springboot-service-1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: springboot-service-1
+  template:
+    metadata:
+      labels:
+        app: springboot-service-1
+    spec:
+      nodeSelector:
+        "beta.kubernetes.io/os": linux
+      containers:
+      - name: springboot-service-1
+        image: pavanrankireddy/k8ssl:latest
+        env:   
+        - name: SERVER_PORT
+          value: "8080"
+        - name: CONTEXT_PATH
+          value: "service1"
+        - name: KEYSTORE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ssl-secret
+              key: keypass
+        - name: KEYSTORE_LOCATION
+          value: "/etc/opt/certs/server-keystore.p12"
+        ports:
+        - containerPort: 8080
+          name: s1appport
+        imagePullPolicy: Never
+        volumeMounts:
+          - mountPath: /etc/opt/certs
+            name: ssl-secrets
+      volumes:
+        - name: ssl-secrets
+          secret:
+            secretName: ssl-keystore
+
+          
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: springboot-service-1
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 8080
+    name: appport
+  selector:
+    app: springboot-service-1
+
